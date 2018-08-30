@@ -1,0 +1,13 @@
+# Ignore the following file patterns
+
+# ignore logs - if experiments run in this directory
+logs
+
+# ignore data - if data stored in this directory
+data/
+
+# ignore scripts - if any scripts for virtualenv, etc. stored in this directory
+scripts/
+
+# ignore virtual environment
+env/
