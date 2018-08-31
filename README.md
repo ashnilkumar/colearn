@@ -28,10 +28,10 @@ The example main file expects PET-CT lung data in the TFRecord format.
         'bglb': tf.FixedLenFeature([], tf.string)	# binary mask of background (height * width * 1)
 ```
 
-For the anatomical binary masks, the two channels (depth) is for the lung fields and the mediastinum.
+For the anatomical binary masks, the two channels (depth dimension of 2) are for the lung fields and the mediastinum.
 
 ### Training
-To train using default parameters use:
+To train using default parameters on a GPU, use:
 
 ```
 python3 colearn_cnn_petct_main.py \
@@ -39,7 +39,7 @@ python3 colearn_cnn_petct_main.py \
 	--train_data_path=TRAIN_DATA_PATH \
 	[--valid_data_path=VALID_DATA_PATH] \
 	--log_root=LOG_ROOT \
-	--train_dir=LOG_ROOT/TRAIN_DIR 
+	--train_dir=LOG_ROOT/TRAIN_DIR \
 	[--valid_dir=LOG_ROOT/VALID_DIR]	
 ```
 
@@ -50,21 +50,25 @@ where:
 	`TRAIN_DIR` is the subdirectory of `LOG_ROOT` for training logs
 	`VALID_DIR` is the subdirectory of `LOG_ROOT` for validation logs
 
-If `VALID_DATA_PATH` is not specified, there will be no verbose outputs for model validation.
-If `VALID_DATAPATH` is specified, then `VALID_DIR` must also be specified.
+If `VALID_DATA_PATH` is not specified, there will be no outputs for model validation.
+If `VALID_DATA_PATH` is specified, then `VALID_DIR` must also be specified.
 
 ### Evaluation
 To evaluate your trained model, use:
 
 ```
 python3 colearn_cnn_petct_main.py \
-        --mode=eval \
-        --eval_data_path=EVAL_DATA_PATH \
-        --log_root=LOG_ROOT \
-        --train_dir=LOG_ROOT/EVAL_DIR
+	--mode=eval \
+	--eval_data_path=EVAL_DATA_PATH \
+	--log_root=LOG_ROOT \
+	--train_dir=LOG_ROOT/EVAL_DIR
 ```
 
 where:
-        `EVAL_DATA_PATH` is the directory with the \*.tfrecord files for the evaluation data
-        `LOG_ROOT` is the directory where the logs for this run will be stored
-        `EVAL_DIR` is the subdirectory of `LOG_ROOT` for evaluation logs
+	`EVAL_DATA_PATH` is the directory with the \*.tfrecord files for the evaluation data
+	`LOG_ROOT` is the directory where the logs for this run will be stored
+	`EVAL_DIR` is the subdirectory of `LOG_ROOT` for evaluation logs
+    
+## Citation
+If you make use of this code in your work, please cite the following paper:
+    `A. Kumar, M. Fulham, D. Feng, and J. Kim, "Co-Learning Feature Fusion Maps from Multi-Modality PET-CT Images of Lung Tumours", _JOURNAL_ **VOL**(NO):pages, year.`
