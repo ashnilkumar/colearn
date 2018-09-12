@@ -61,13 +61,15 @@ python3 colearn_cnn_petct_main.py \
 	--mode=eval \
 	--eval_data_path=EVAL_DATA_PATH \
 	--log_root=LOG_ROOT \
-	--train_dir=LOG_ROOT/EVAL_DIR
+	--eval_dir=LOG_ROOT/EVAL_DIR \
+	--checkpoint_to_eval=CKPT_TO_EVAL \
 ```
 
 where:
 	`EVAL_DATA_PATH` is the directory with the \*.tfrecord files for the evaluation data
 	`LOG_ROOT` is the directory where the logs for this run will be stored
 	`EVAL_DIR` is the subdirectory of `LOG_ROOT` for evaluation logs
+    `CKPT_TO_EVAL` is the integer number of the training checkpoint to evaluate  
     
 ## Citation
 If you make use of this code in your work, please cite the following paper:
