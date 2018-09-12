@@ -262,7 +262,7 @@ def train(hps, design):
                     # print images if needed
                     if FLAGS.train_img_save_step > 0 and step % FLAGS.train_img_save_step == 0:
                         print('SAVING TRAINING IMAGES')
-                        _saveImages(hps.batch_size, step, cts, pts, labels = lbls, probs = probs, mode='train')
+                        _saveImages(cts.shape[0], step, cts, pts, labels = lbls, probs = probs, mode='train')
                         
                 # run validation op AND print validation logs if specified
                 if not FLAGS.valid_data_path == '' and FLAGS.valid_iter > 0 and step % FLAGS.valid_iter == 0:
@@ -275,7 +275,7 @@ def train(hps, design):
                         
                     if FLAGS.valid_img_save_step > 0 and step % FLAGS.valid_img_save_step == 0:
                         print('SAVING VALIDATION IMAGES')
-                        _saveImages(hps.batch_size, step, cts, pts, labels = lbls, probs = probs, mode='valid')
+                        _saveImages(cts.shape[0], step, cts, pts, labels = lbls, probs = probs, mode='valid')
                 
                 # save checkpoint when specified
                 if FLAGS.chkpt_iter > 0 and step % FLAGS.chkpt_iter == 0:
