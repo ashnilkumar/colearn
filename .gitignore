@@ -11,3 +11,7 @@ scripts/
 
 # ignore virtual environment
 env/
+
+# ignore Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
