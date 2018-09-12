@@ -36,8 +36,8 @@ tf.app.flags.DEFINE_string('valid_dir', '',
 tf.app.flags.DEFINE_string('eval_dir', '',
                            'Directory to keep evaluation outputs.')
 
-tf.app.flags.DEFINE_integer('eval_chkpt_num', 1000,
-                           'Checkpoint to use for evaluation')
+tf.app.flags.DEFINE_integer('checkpoint_to_eval', 1000,
+                           'Training iteration to use for evaluation')
 
 tf.app.flags.DEFINE_integer('train_iter', 20,
                             'Number of iterations after which to log summaries.')
@@ -45,8 +45,12 @@ tf.app.flags.DEFINE_integer('chkpt_iter', 1000,
                             'Number of iterations after which to save checkpoint.')
 tf.app.flags.DEFINE_integer('valid_iter', 20,
                             'Number of iterations after which to validate.')
-tf.app.flags.DEFINE_integer('img_save_step', 2500,
-                         'Whether to save outputs as images (how many steps)')
+tf.app.flags.DEFINE_integer('train_img_save_step', 2500,
+                         'Whether to save training outputs as images (how many steps)')
+tf.app.flags.DEFINE_integer('valid_img_save_step', 2500,
+                         'Whether to save validation outputs as images (how many steps)')
+tf.app.flags.DEFINE_integer('eval_img_save_step', 1,
+                         'Whether to save evaluation outputs as images (how many steps)')
 
 tf.app.flags.DEFINE_string('log_root', '',
                            'Directory to keep the checkpoints. Should be a '
@@ -77,6 +81,8 @@ tf.app.flags.DEFINE_integer('num_epochs', 500,
                             'Number of epochs.')
 tf.app.flags.DEFINE_integer('num_classes', 4, 
                             'Number of classes.')
+tf.app.flags.DEFINE_integer('eval_epochs', 1, 
+                            'Number of epochs to evaluate test data (mainly to check consistency).')
 
 
 def _get_tfrecord_files_from_dir(the_dir):
@@ -148,7 +154,7 @@ def _saveFusionMap(num_images, num_blocks, step, colearn_outputs, mode='eval'):
                 fusion_list = []
                 for sl in fusion_data:
                     fusion_list.append(Image.fromarray(sl,mode='F'))
-                fusion_list[0].save(save_dir + '/' + str(step) + '_batch_' + str(i) + +'_blk_' + str(blk) + '_fusion.tif',
+                fusion_list[0].save(save_dir + '/step' + str(step) + '_batch_' + str(i) + '_blk_' + str(blk) + '_fusion.tif',
                                 save_all=True,
                                 append_images=fusion_list[1:])
             
@@ -254,7 +260,7 @@ def train(hps, design):
                     train_writer.flush()
             
                     # print images if needed
-                    if FLAGS.img_save_step > 0 and step % FLAGS.img_save_step == 0:
+                    if FLAGS.train_img_save_step > 0 and step % FLAGS.train_img_save_step == 0:
                         print('SAVING TRAINING IMAGES')
                         _saveImages(hps.batch_size, step, cts, pts, labels = lbls, probs = probs, mode='train')
                         
@@ -267,7 +273,7 @@ def train(hps, design):
                     valid_writer.add_summary(val_summary, step)
                     valid_writer.flush()
                         
-                    if FLAGS.img_save_step > 0 and step % FLAGS.img_save_step == 0:
+                    if FLAGS.valid_img_save_step > 0 and step % FLAGS.valid_img_save_step == 0:
                         print('SAVING VALIDATION IMAGES')
                         _saveImages(hps.batch_size, step, cts, pts, labels = lbls, probs = probs, mode='valid')
                 
@@ -298,47 +304,52 @@ def evaluate(hps, design):
     """Eval loop."""
     # define eval input data
     eval_records = _get_tfrecord_files_from_dir(FLAGS.eval_data_path) #get tfrecord files for train
-    eval_iterator = petct_input.build_input(eval_records, hps.batch_size, hps.num_epochs, FLAGS.mode) 
-    eval_iterator_handle = eval_iterator.string_handle()
+    eval_dataset, _ = petct_input.build_input(eval_records, hps.batch_size, FLAGS.eval_epochs, design.width, train_mode=False) 
+    eval_iterator = eval_dataset.make_initializable_iterator()
     
     # needed for input handlers
     g_init_op = tf.global_variables_initializer()
     l_init_op = tf.local_variables_initializer()
     
+    # make directory where outputs will be stored
+    if FLAGS.eval_dir != '' and not os.path.exists(FLAGS.eval_dir):
+        os.makedirs(FLAGS.eval_dir)
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True,device_count = {'GPU': 1})) as mon_sess:
         # initialise
         mon_sess.run([g_init_op, l_init_op])
-
-        # iterator initlisation
-        eval_handle = mon_sess.run(eval_iterator_handle)               
+       
+        # get graph definition
+        meta_graph_file = FLAGS.log_root + '/' + FLAGS.chkpt_file + str(FLAGS.checkpoint_to_eval) + '-end.ckpt.meta'        
         
-        # restore from checkpoint
-        ckpt_meta = FLAGS.log_root + '/' + FLAGS.chkpt_file + str(FLAGS.eval_chkpt_num) + '-end.ckpt.meta'
-        meta_restore = tf.train.import_meta_graph(ckpt_meta)        
+        # get checkpoint
+        ckpt_file = FLAGS.log_root + '/' + FLAGS.chkpt_file + str(FLAGS.checkpoint_to_eval) + '-end.ckpt'
+        
+        # try to load
         try:
-            ckpt_state = tf.train.get_checkpoint_state(FLAGS.log_root)
-        except tf.errors.OutOfRangeError as e:
+            tf.logging.info('Loading checkpoint %s', ckpt_file)
+            meta_restore = tf.train.import_meta_graph(meta_graph_file)        
+            meta_restore.restore(mon_sess, ckpt_file)
+        except tf.errors.OpError as e:
             tf.logging.error('Cannot restore checkpoint: %s', e)
             sys.exit(0)
-        if not (ckpt_state and ckpt_state.model_checkpoint_path):
-            tf.logging.info('No model to eval yet at %s', FLAGS.log_root)
-            sys.exit(0)
-        tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
-        meta_restore.restore(mon_sess, ckpt_state.model_checkpoint_path) 
         
         # get all the tensors and operations that need to be fed during evaluation
         handle = tf.get_default_graph().get_tensor_by_name('data:0') # data will be fed here 
         batch_size = tf.get_default_graph().get_tensor_by_name('batch_size:0') # batch_size variation
         train_mode  = tf.get_default_graph().get_tensor_by_name('train_mode:0') # will be set to False to turn off batch norm 
         
+        # iterator initlisation after we have gotten the batch size placeholder from the checkpoint
+        eval_handle = mon_sess.run(eval_iterator.string_handle())
+        mon_sess.run(eval_iterator.initializer, feed_dict={batch_size: hps.batch_size})
+        
         # get all the tensors and operations that need to be monitored during evaluation
-        probabilities = tf.get_default_graph().get_tensor_by_name('probabilities:0') 
+        probabilities = tf.get_default_graph().get_tensor_by_name('probability_map:0') 
         ct_img = tf.get_default_graph().get_tensor_by_name('CT:0') 
-        pt_img = tf.get_default_graph().get_tensor_by_name('PT:0') 
+        pt_img = tf.get_default_graph().get_tensor_by_name('PET:0') 
         label = tf.get_default_graph().get_tensor_by_name('label:0') 
         colearn_ops = []
-        for blks in range(1, FLAGS.num_blocks + 1):
+        for blk in range(1, design.num_blocks + 1):
             colearn_op = tf.get_default_graph().get_tensor_by_name('COLEARN_' + str(blk) + '/Squeeze:0') 
             colearn_ops.append(colearn_op)
         
@@ -351,13 +362,13 @@ def evaluate(hps, design):
                 cts, pts, lbls, probs, colearn_out = mon_sess.run([ct_img, pt_img, label, probabilities, colearn_ops], feed_dict={handle: eval_handle, batch_size: hps.batch_size, train_mode: False})
 
                 print('[EVAL] STEP: %d' % (step))
-                if FLAGS.IMSAVE > 0:
-                    if step % FLAGS.img_save_step == 0:
+                if FLAGS.eval_img_save_step > 0:
+                    if step % FLAGS.eval_img_save_step == 0:
                         # only works for single style
                         print('SAVING EVAL IMAGES')
-                        _saveImages(hps.batch_size, step, cts, pts, labels = lbls, probs = probs, mode='eval')
+                        _saveImages(cts.shape[0], step, cts, pts, labels = lbls, probs = probs, mode='eval')
                         print('SAVING CO-LEARNED FUSION')
-                        _saveFusion(hps.batch_size, hps.num_blocks, step, colearn_out, mode='eval')
+                        _saveFusionMap(cts.shape[0], design.num_blocks, step, colearn_out, mode='eval')
 
             #out of data
             except tf.errors.OutOfRangeError:
