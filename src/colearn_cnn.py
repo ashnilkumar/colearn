@@ -140,13 +140,13 @@ class CoLearnNet(object):
             fusion_maps.append(fusion_map)
             
         # decode
-        logits, probabilities = dd.build_decoder(self, 
+        logits, probability_map = dd.build_decoder(self, 
                                                 encoders = encoders,
                                                 fusion_maps = fusion_maps,
                                                 num_blocks = self.design.num_blocks)
 
         # put probabilities on the main model for easier access by external classes
-        self.probabilities = probabilities
+        self.probability_map = probability_map
         
         # get losses!
         self.loss = self.obtain_total_loss(logits)
