@@ -163,7 +163,7 @@ def _saveFusionMap(num_images, num_blocks, step, colearn_outputs, mode='eval'):
             
 def get_metrics_ops(model, mode='train'):
     truth = model.label
-    probs = model.probabilities
+    probs = model.probability_map
     pred_slice = tf.argmax(probs, axis=3) # which axis has the maximum value    
     predictions = tf.one_hot(pred_slice, FLAGS.num_classes) # go from label to one hot format to make binary easier
     
@@ -250,7 +250,7 @@ def train(hps, design):
         while True:
             try:
                 ## run training op
-                _, train_summary, step, loss, p, r, a, e, cts, pts, lbls, probs = mon_sess.run([model.train_op, tr_summary_op, model.global_step, model.loss, tr_precision_op, tr_recall_op, tr_accuracy_op, tr_rmse_op, model.data[0], model.data[1], model.label, model.probabilities], feed_dict={handle: training_handle, batch_size: hps.batch_size, model.is_training: True})
+                _, train_summary, step, loss, p, r, a, e, cts, pts, lbls, probs = mon_sess.run([model.train_op, tr_summary_op, model.global_step, model.loss, tr_precision_op, tr_recall_op, tr_accuracy_op, tr_rmse_op, model.data[0], model.data[1], model.label, model.probability_map], feed_dict={handle: training_handle, batch_size: hps.batch_size, model.is_training: True})
                     
                 # check if there is a need to print train logs
                 if FLAGS.train_iter > 0 and step % FLAGS.train_iter == 0:
@@ -266,7 +266,7 @@ def train(hps, design):
                         
                 # run validation op AND print validation logs if specified
                 if not FLAGS.valid_data_path == '' and FLAGS.valid_iter > 0 and step % FLAGS.valid_iter == 0:
-                    _, val_summary, loss, p, r, a, e, cts, pts, lbls, probs = mon_sess.run([model.val_op, val_summary_op, model.loss, val_precision_op, val_recall_op, val_accuracy_op, val_rmse_op, model.data[0], model.data[1], model.label, model.probabilities], feed_dict={handle: validation_handle, batch_size: hps.batch_size, model.is_training: False})
+                    _, val_summary, loss, p, r, a, e, cts, pts, lbls, probs = mon_sess.run([model.val_op, val_summary_op, model.loss, val_precision_op, val_recall_op, val_accuracy_op, val_rmse_op, model.data[0], model.data[1], model.label, model.probability_map], feed_dict={handle: validation_handle, batch_size: hps.batch_size, model.is_training: False})
                     val_step = step
                     print('[VALID] STEP: %d, LOSS: %.5f, PRECISION: %.5f, RECALL: %.5f, ACCURACY: %.5f, RMSE: %.5f' % 
                               (step, loss, p, r, a, e))
