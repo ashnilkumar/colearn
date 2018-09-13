@@ -44,11 +44,12 @@ python3 colearn_cnn_petct_main.py \
 ```
 
 where:
-	`TRAIN_DATA_PATH` is the directory with the \*.tfrecord files for the training data
-	`VALID_DATA_PATH` is the directory with the \*.tfrecord files for the validation data
-	`LOG_ROOT` is the directory where the logs for this run will be stored
-	`TRAIN_DIR` is the subdirectory of `LOG_ROOT` for training logs
-	`VALID_DIR` is the subdirectory of `LOG_ROOT` for validation logs
+
+- `TRAIN_DATA_PATH` is the directory with the \*.tfrecord files for the training data
+- `VALID_DATA_PATH` is the directory with the \*.tfrecord files for the validation data
+- `LOG_ROOT` is the directory where the logs for this run will be stored
+- `TRAIN_DIR` is the subdirectory of `LOG_ROOT` for training logs
+- `VALID_DIR` is the subdirectory of `LOG_ROOT` for validation logs
 
 If `VALID_DATA_PATH` is not specified, there will be no outputs for model validation.
 If `VALID_DATA_PATH` is specified, then `VALID_DIR` must also be specified.
@@ -66,10 +67,11 @@ python3 colearn_cnn_petct_main.py \
 ```
 
 where:
-	`EVAL_DATA_PATH` is the directory with the \*.tfrecord files for the evaluation data
-	`LOG_ROOT` is the directory where the logs for this run will be stored
-	`EVAL_DIR` is the subdirectory of `LOG_ROOT` for evaluation logs
-    `CKPT_TO_EVAL` is the integer number of the training checkpoint to evaluate  
+
+- `EVAL_DATA_PATH` is the directory with the \*.tfrecord files for the evaluation data
+- `LOG_ROOT` is the directory where the logs for this run will be stored
+- `EVAL_DIR` is the subdirectory of `LOG_ROOT` for evaluation logs
+- `CKPT_TO_EVAL` is the integer number of the training checkpoint to evaluate  
     
 ## Citation
 If you make use of this code in your work, please cite the following paper:
