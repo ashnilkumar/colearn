@@ -75,4 +75,4 @@ where:
     
 ## Citation
 If you make use of this code in your work, please cite the following paper:
-    `A. Kumar, M. Fulham, D. Feng, and J. Kim, "Co-Learning Feature Fusion Maps from PET-CT Images of Lung Cancer", _JOURNAL_ **VOL**(NO):pages, year.`
+    `A. Kumar, M. Fulham, D. Feng, and J. Kim, "Co-Learning Feature Fusion Maps from PET-CT Images of Lung Cancer", arXiv:1810.02492, 2018.`
