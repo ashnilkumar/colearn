@@ -21,28 +21,13 @@ def decoder_block(model, dec_name, input_layer, num_filters, kernel=[3,3], decon
             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR
         )
         
-            
-        # then a 1 stride deconv to smooth
-        deconv = tf.layers.conv2d_transpose(
-            inputs=ups,
-            filters=num_filters,
-            strides=deconv_stride,
-            kernel_size=kernel,
-            kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
-            kernel_regularizer=tf.contrib.layers.l2_regularizer(model.hyper.l2_scale),
-            bias_initializer=tf.zeros_initializer(),
-            padding="same",
-            activation=None,
-            name='deconv2'
-        )
-        deconv_relu1 = tf.nn.leaky_relu(deconv, alpha=model.hyper.relu_leakiness)
     
             
         # Convolutional Layer 
         # Computes num_filters features using a kernel x kernel filter with ReLU activation.
         # Padding is added to preserve width and height.
         conv1 = tf.layers.conv2d(
-            inputs=deconv,
+            inputs=ups, 
             filters=num_filters,
             kernel_size=kernel,
             padding="same",
@@ -77,14 +62,13 @@ def decoder_block(model, dec_name, input_layer, num_filters, kernel=[3,3], decon
             kernel_size=kernel,
             padding="same",
             activation=None,
-            name='conv'
+            name='conv2'
         )
         
             
         
         # apply relu BEFORE batch norm 
         conv_relu2 = tf.nn.leaky_relu(conv2, alpha=model.hyper.relu_leakiness)
-        model._activation_summary(conv_relu2)
         
         #apply batch norm on relu output
         conv_relu_bn2 = tf.layers.batch_normalization(
@@ -105,8 +89,6 @@ def decoder_block(model, dec_name, input_layer, num_filters, kernel=[3,3], decon
         # if model specified, do summaries
         if model is not None: 
             model._activation_summary(ups)
-            model._activation_summary(deconv)
-            model._activation_summary(deconv_relu1)
             model._activation_summary(conv1)
             model._activation_summary(conv_relu1)
             model._activation_summary(conv_relu_bn1)
